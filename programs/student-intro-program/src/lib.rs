@@ -8,6 +8,12 @@ pub mod student_intro_program {
 
     use super::*;
     pub fn create_account(ctx:Context<CreateStudent>,name:String,short_message:String)->Result<()>{
+        if name.len()>32{
+            return Err(StudentProgramError::NameTooLong.into());
+        }
+        if short_message.len()>50{
+            return Err(StudentProgramError::ShortMessageTooLong.into());
+        }
         let student_account = &mut ctx.accounts.student_account;
         student_account.id = ctx.accounts.student.key();
         student_account.name = name;
@@ -57,6 +63,12 @@ pub struct UpdateStudent<'info>{
     pub system_program:Program<'info,System>
 }
 
+
+// #[derive(Accounts)]
+// pub struct InitializeRewardToken<'info>{
+
+// }}
+
 #[derive(Accounts)]
 #[instruction(name:String)]
 pub struct DeleteStudent<'info>{
@@ -82,4 +94,12 @@ pub struct Student{
 
 impl Space for Student{
     const INIT_SPACE: usize = 8 + 32 + 4 + 4;
+}
+
+#[error_code]
+enum StudentProgramError{
+    #[msg("Name cannot be greater than 32 characters")]
+    NameTooLong,
+    #[msg("Short message cannot be greater than 50 characters")]
+    ShortMessageTooLong,
 }
