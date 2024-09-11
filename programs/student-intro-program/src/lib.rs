@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{ Mint, Token};
+use anchor_spl::{associated_token::AssociatedToken, token::{ Mint, Token, TokenAccount}};
 
 declare_id!("AjGddYSymQFXUrKjahjAqhemd7Epy7X74qDtDXH7ge2d");
 
@@ -7,7 +7,12 @@ declare_id!("AjGddYSymQFXUrKjahjAqhemd7Epy7X74qDtDXH7ge2d");
 pub mod student_intro_program {
    
 
+    use anchor_spl::token::{mint_to, MintTo};
+
     use super::*;
+    pub fn initialize_reward_token(_ctx:Context<InitializeRewardToken>)->Result<()>{
+        Ok(())
+    }
     pub fn create_account(ctx:Context<CreateStudent>,name:String,short_message:String)->Result<()>{
         if name.len()>32{
             return Err(StudentProgramError::NameTooLong.into());
@@ -19,6 +24,11 @@ pub mod student_intro_program {
         student_account.id = ctx.accounts.student.key();
         student_account.name = name;
         student_account.short_message = short_message;
+        mint_to(CpiContext::new_with_signer(ctx.accounts.token_program.to_account_info(), MintTo{
+            authority:ctx.accounts.student.to_account_info(),
+            to:ctx.accounts.reward_account.to_account_info(),
+            mint:ctx.accounts.reward_mint.to_account_info(),
+        }, &[&["reward".as_bytes(),&[ctx.bumps.reward_mint]]]), (10*10)^6)?;
         Ok(())
     }
     pub fn update_account(ctx:Context<UpdateStudent>,name:String,short_message:String)->Result<()>{
@@ -45,7 +55,22 @@ pub struct CreateStudent<'info>{
     pub student_account:Account<'info,Student>,
     #[account(mut)]
     pub student:Signer<'info>,
-    pub system_program:Program<'info,System>
+    pub system_program:Program<'info,System>,
+    pub token_program:Program<'info,Token>,
+    #[account(
+        mut,
+        seeds=["reward".as_bytes()],
+        bump,
+    )]
+    pub reward_mint:Account<'info,Mint>,
+    #[account(
+        init_if_needed,
+        payer=student,
+        associated_token::mint=reward_mint,
+        associated_token::authority=student,
+    )]
+    pub reward_account:Account<'info,TokenAccount>,
+    pub  associated_token_program:Program<'info,AssociatedToken>
 }
 
 #[derive(Accounts)]

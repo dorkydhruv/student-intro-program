@@ -3,6 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { StudentIntroProgram } from "../target/types/student_intro_program";
 import { it } from "mocha";
 import { expect } from "chai";
+import { getAccount, getAssociatedTokenAddress } from "@solana/spl-token";
 
 describe("student-intro-program", () => {
   const provider = anchor.AnchorProvider.env();
@@ -17,14 +18,30 @@ describe("student-intro-program", () => {
     [Buffer.from(stduent.name), provider.wallet.publicKey.toBuffer()],
     program.programId
   );
+  const [rewardPda] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("reward")],
+    program.programId
+  );
+  it("initialize a token mint", async () => {
+    const tx = await program.methods.initializeRewardToken().rpc();
+  });
   it("create new student acc", async () => {
+    const tokenAccount = await getAssociatedTokenAddress(
+      rewardPda,
+      provider.wallet.publicKey
+    );
     const tx = await program.methods
       .createAccount(stduent.name, stduent.short_message)
+      .accounts({
+        reward_account: tokenAccount,
+      })
       .rpc();
     const acc = await program.account.student.fetch(stduentPda);
-    console.log(acc);
     expect(acc.name).to.equal(stduent.name);
     expect(acc.shortMessage).to.equal(stduent.short_message);
+
+    const userAta = await getAccount(provider.connection, tokenAccount);
+    expect(Number(userAta.amount)).to.equal((10 * 10) ^ 6);
   });
   it("update student acc", async () => {
     const newShortMessage = "YO bu=itch!";
@@ -32,7 +49,6 @@ describe("student-intro-program", () => {
       .updateAccount(stduent.name, newShortMessage)
       .rpc();
     const acc = await program.account.student.fetch(stduentPda);
-    console.log(acc);
     expect(acc.name).to.equal(stduent.name);
     expect(acc.shortMessage).to.equal(newShortMessage);
   });
