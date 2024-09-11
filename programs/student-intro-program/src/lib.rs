@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{ Mint, Token};
 
 declare_id!("AjGddYSymQFXUrKjahjAqhemd7Epy7X74qDtDXH7ge2d");
 
@@ -64,10 +65,24 @@ pub struct UpdateStudent<'info>{
 }
 
 
-// #[derive(Accounts)]
-// pub struct InitializeRewardToken<'info>{
-
-// }}
+#[derive(Accounts)]
+pub struct InitializeRewardToken<'info>{
+    #[account(
+        init,
+        seeds=["reward".as_bytes()],
+        payer=user,
+        bump,
+        mint::decimals=8,
+        mint::authority=user,
+        )]
+        pub reward_mint:Account<'info,Mint>,
+        #[account(mut)]
+        pub user:Signer<'info>,
+        pub token_program:Program<'info,Token>,
+        pub system_program:Program<'info,System>,
+        pub rent:Sysvar<'info,Rent>,
+        
+}
 
 #[derive(Accounts)]
 #[instruction(name:String)]
