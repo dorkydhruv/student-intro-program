@@ -5,9 +5,8 @@ declare_id!("AjGddYSymQFXUrKjahjAqhemd7Epy7X74qDtDXH7ge2d");
 
 #[program]
 pub mod student_intro_program {
-   
-
     use anchor_spl::token::{mint_to, MintTo};
+
 
     use super::*;
     pub fn initialize_reward_token(_ctx:Context<InitializeRewardToken>)->Result<()>{
