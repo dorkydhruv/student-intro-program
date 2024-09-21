@@ -68,6 +68,7 @@ pub struct CreateStudent<'info>{
         associated_token::mint=reward_mint,
         associated_token::authority=student,
     )]
+    //pda_Account
     pub reward_account:Account<'info,TokenAccount>,
     pub  associated_token_program:Program<'info,AssociatedToken>
 }
